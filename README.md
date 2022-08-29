@@ -1,4 +1,4 @@
-# EfficientNetV1-PyTorch
+# EfficientNetV2-PyTorch
 
 ## Overview
 
@@ -7,7 +7,7 @@ of [EfficientNet: Rethinking Model Scaling for Convolutional Neural Networks](ht
 
 ## Table of contents
 
-- [EfficientNetV1-PyTorch](#efficientnetv1-pytorch)
+- [EfficientNetV2-PyTorch](#efficientnetv2-pytorch)
     - [Overview](#overview)
     - [Table of contents](#table-of-contents)
     - [Download weights](#download-weights)
@@ -41,12 +41,12 @@ Both training and testing only need to modify the `config.py` file.
 
 ### Test
 
-- line 29: `model_arch_name` change to `efficientnet_v1_b0`.
+- line 29: `model_arch_name` change to `efficientnet_v2_s`.
 - line 31: `model_mean_parameters` change to `[0.485, 0.456, 0.406]`.
 - line 32: `model_std_parameters` change to `[0.229, 0.224, 0.225]`.
 - line 34: `model_num_classes` change to `1000`.
 - line 36: `mode` change to `test`.
-- line 91: `model_weights_path` change to `./results/pretrained_models/efficientnet_v1_b0-ImageNet_1K-54492891.pth.tar`.
+- line 91: `model_weights_path` change to `./results/pretrained_models/EfficientNetV2_S-ImageNet_1K-a93bc34c.pth.tar`.
 
 ```bash
 python3 test.py
@@ -54,12 +54,12 @@ python3 test.py
 
 ### Train model
 
-- line 29: `model_arch_name` change to `efficientnet_v1_b0`.
+- line 29: `model_arch_name` change to `efficientnet_v2_s`.
 - line 31: `model_mean_parameters` change to `[0.485, 0.456, 0.406]`.
 - line 32: `model_std_parameters` change to `[0.229, 0.224, 0.225]`.
 - line 34: `model_num_classes` change to `1000`.
 - line 36: `mode` change to `train`.
-- line 51: `pretrained_model_weights_path` change to `./results/pretrained_models/efficientnet_v1_b0-ImageNet_1K-54492891.pth.tar`.
+- line 51: `pretrained_model_weights_path` change to `./results/pretrained_models/EfficientNetV2_S-ImageNet_1K-a93bc34c.pth.tar`.
 
 ```bash
 python3 train.py
@@ -67,12 +67,12 @@ python3 train.py
 
 ### Resume train model
 
-- line 29: `model_arch_name` change to `efficientnet_v1_b0`.
+- line 29: `model_arch_name` change to `efficientnet_v2_s`.
 - line 31: `model_mean_parameters` change to `[0.485, 0.456, 0.406]`.
 - line 32: `model_std_parameters` change to `[0.229, 0.224, 0.225]`.
 - line 34: `model_num_classes` change to `1000`.
 - line 36: `mode` change to `train`.
-- line 54: `resume` change to `./samples/efficientnet_v1_b0-ImageNet_1K/epoch_xxx.pth.tar`.
+- line 54: `resume` change to `./samples/efficientnet_v2_s-ImageNet_1K/epoch_xxx.pth.tar`.
 
 ```bash
 python3 train.py
@@ -86,7 +86,7 @@ In the following table, the top-x error value in `()` indicates the result of th
 
 |       Model        |   Dataset   | Top-1 error (val) | Top-5 error (val) |
 |:------------------:|:-----------:|:-----------------:|:-----------------:|
-| efficientnet_v1_b0 | ImageNet_1K | 22.9%(**26.1%**)  |  6.7%(**8.4%**)   |
+| efficientnet_v2_s | ImageNet_1K | 22.9%(**26.1%**)  |  6.7%(**8.4%**)   |
 | efficientnet_v1_b1 | ImageNet_1K | 20.9%(**21.3%**)  |  5.6%(**5.7%**)   |
 | efficientnet_v1_b2 | ImageNet_1K | 19.9%(**22.1%**)  |  5.1%(**6.4%**)   |
 | efficientnet_v1_b3 | ImageNet_1K | 18.4%(**18.9%**)  |  4.3%(**4.3%**)   |
@@ -96,7 +96,7 @@ In the following table, the top-x error value in `()` indicates the result of th
 | efficientnet_v1_b7 | ImageNet_1K | 15.7%(**15.7%**)  |  3.0%(**3.1%**)   |
 
 ```bash
-# Download `efficientnet_v1_b0-ImageNet_1K-54492891.pth.tar` weights to `./results/pretrained_models`
+# Download `EfficientNetV2_S-ImageNet_1K-a93bc34c.pth.tar` weights to `./results/pretrained_models`
 # More detail see `README.md<Download weights>`
 python3 ./inference.py 
 ```
@@ -108,8 +108,8 @@ Input:
 Output:
 
 ```text
-Build `efficientnet_v1_b0` model successfully.
-Load `efficientnet_v1_b0` model weights `/EfficientNetV1-PyTorch/results/pretrained_models/efficientnet_v1_b0-ImageNet_1K-54492891.pth.tar` successfully.
+Build `efficientnet_v2_s` model successfully.
+Load `efficientnet_v2_s` model weights `/EfficientNetV2-PyTorch/results/pretrained_models/EfficientNetV2_S-ImageNet_1K-a93bc34c.pth.tar` successfully.
 tench, Tinca tinca                                                          (95.10%)
 barracouta, snoek                                                           (2.01%)
 reel                                                                        (0.10%)

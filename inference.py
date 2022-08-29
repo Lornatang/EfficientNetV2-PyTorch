@@ -111,14 +111,14 @@ def main():
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
-    parser.add_argument("--model_arch_name", type=str, default="efficientnet_v1_b0")
+    parser.add_argument("--model_arch_name", type=str, default="efficientnet_v2_s")
     parser.add_argument("--model_mean_parameters", type=list, default=[0.485, 0.456, 0.406])
     parser.add_argument("--model_std_parameters", type=list, default=[0.229, 0.224, 0.225])
     parser.add_argument("--class_label_file", type=str, default="./data/ImageNet_1K_labels_map.txt")
     parser.add_argument("--model_num_classes", type=int, default=1000)
-    parser.add_argument("--model_weights_path", type=str, default="./results/pretrained_models/efficientnet_v1_b0-ImageNet_1K-54492891.pth.tar")
+    parser.add_argument("--model_weights_path", type=str, default="./results/pretrained_models/EfficientNetV2_S-ImageNet_1K-a93bc34c.pth.tar")
     parser.add_argument("--image_path", type=str, default="./figure/n01440764_36.JPEG")
-    parser.add_argument("--image_size", type=int, default=224)
+    parser.add_argument("--image_size", type=int, default=384)
     parser.add_argument("--device_type", type=str, default="cpu", choices=["cpu", "cuda"])
     args = parser.parse_args()
 

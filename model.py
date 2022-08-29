@@ -24,19 +24,37 @@ from torchvision.ops.stochastic_depth import StochasticDepth
 from utils import make_divisible
 
 __all__ = [
-    "EfficientNetV1",
-    "efficientnet_v1_b0", "efficientnet_v1_b1", "efficientnet_v1_b2", "efficientnet_v1_b3", "efficientnet_v1_b4",
-    "efficientnet_v1_b5", "efficientnet_v1_b6", "efficientnet_v1_b7",
+    "EfficientNetV2",
+    "efficientnet_v2_s", "efficientnet_v2_m", "efficientnet_v2_l",
 ]
 
-efficientnet_cfg = [
-    [1, 3, 1, 32, 16, 1],
-    [6, 3, 2, 16, 24, 2],
-    [6, 5, 2, 24, 40, 2],
-    [6, 3, 2, 40, 80, 3],
-    [6, 5, 1, 80, 112, 3],
-    [6, 5, 2, 112, 192, 4],
-    [6, 3, 1, 192, 320, 1],
+efficientnet_v2_s_cfg = [
+    ["FusedMBConv", 1, 3, 1, 24, 24, 2],
+    ["FusedMBConv", 4, 3, 2, 24, 48, 4],
+    ["FusedMBConv", 4, 3, 2, 48, 64, 4],
+    ["MBConv", 4, 3, 2, 64, 128, 6],
+    ["MBConv", 6, 3, 1, 128, 160, 9],
+    ["MBConv", 6, 3, 2, 160, 256, 15],
+]
+
+efficientnet_v2_m_cfg = [
+    ["FusedMBConv", 1, 3, 1, 24, 24, 3],
+    ["FusedMBConv", 4, 3, 2, 24, 48, 5],
+    ["FusedMBConv", 4, 3, 2, 48, 80, 5],
+    ["MBConv", 4, 3, 2, 80, 160, 7],
+    ["MBConv", 6, 3, 1, 160, 176, 14],
+    ["MBConv", 6, 3, 2, 176, 304, 18],
+    ["MBConv", 6, 3, 1, 304, 512, 5],
+]
+
+efficientnet_v2_l_cfg = [
+    ["FusedMBConv", 1, 3, 1, 32, 32, 4],
+    ["FusedMBConv", 4, 3, 2, 32, 64, 7],
+    ["FusedMBConv", 4, 3, 2, 64, 96, 7],
+    ["MBConv", 4, 3, 2, 96, 192, 10],
+    ["MBConv", 6, 3, 1, 192, 224, 19],
+    ["MBConv", 6, 3, 2, 224, 384, 25],
+    ["MBConv", 6, 3, 1, 384, 640, 7],
 ]
 
 
@@ -49,13 +67,10 @@ class MBConv(nn.Module):
             stride: int,
             padding: int,
             expand_ratio: float,
-            width_mult: float = 1.0,
             stochastic_depth_prob: float = 0.2,
     ) -> None:
         super(MBConv, self).__init__()
         self.use_res_connect = stride == 1 and in_channels == out_channels
-        in_channels = make_divisible(in_channels * width_mult, 8, None)
-        out_channels = make_divisible(out_channels * width_mult, 8, None)
         expanded_channels = make_divisible(in_channels * expand_ratio, 8, None)
 
         block: List[nn.Module] = []
@@ -70,7 +85,7 @@ class MBConv(nn.Module):
                     stride=1,
                     padding=0,
                     groups=1,
-                    norm_layer=partial(nn.BatchNorm2d, eps=0.001, momentum=0.01),
+                    norm_layer=partial(nn.BatchNorm2d, eps=0.001),
                     activation_layer=partial(nn.SiLU, inplace=True),
                     bias=False,
                 )
@@ -85,7 +100,7 @@ class MBConv(nn.Module):
                 stride=stride,
                 padding=padding,
                 groups=expanded_channels,
-                norm_layer=partial(nn.BatchNorm2d, eps=0.001, momentum=0.01),
+                norm_layer=partial(nn.BatchNorm2d, eps=0.001),
                 activation_layer=partial(nn.SiLU, inplace=True),
                 bias=False,
             )
@@ -109,7 +124,7 @@ class MBConv(nn.Module):
                 stride=1,
                 padding=0,
                 groups=1,
-                norm_layer=partial(nn.BatchNorm2d, eps=0.001, momentum=0.01),
+                norm_layer=partial(nn.BatchNorm2d, eps=0.001),
                 activation_layer=None,
                 bias=False,
             )
@@ -129,53 +144,132 @@ class MBConv(nn.Module):
         return out
 
 
-class EfficientNetV1(nn.Module):
+class FusedMBConv(nn.Module):
+    def __init__(
+            self,
+            in_channels: int,
+            out_channels: int,
+            kernel: int,
+            stride: int,
+            padding: int,
+            expand_ratio: float,
+            stochastic_depth_prob: float = 0.2,
+    ) -> None:
+        super(FusedMBConv, self).__init__()
+        self.use_res_connect = stride == 1 and in_channels == out_channels
+        expanded_channels = make_divisible(in_channels * expand_ratio, 8, None)
+
+        block: List[nn.Module] = []
+
+        # expand
+        if expanded_channels != in_channels:
+            # fused expand
+            block.append(
+                Conv2dNormActivation(
+                    in_channels,
+                    expanded_channels,
+                    kernel_size=kernel,
+                    stride=stride,
+                    padding=padding,
+                    groups=1,
+                    norm_layer=partial(nn.BatchNorm2d, eps=0.001),
+                    activation_layer=partial(nn.SiLU, inplace=True),
+                    bias=False,
+                )
+            )
+
+            # project
+            block.append(
+                Conv2dNormActivation(
+                    expanded_channels,
+                    out_channels,
+                    kernel_size=1,
+                    stride=1,
+                    padding=0,
+                    groups=1,
+                    norm_layer=partial(nn.BatchNorm2d, eps=0.001),
+                    activation_layer=None,
+                    bias=False,
+                )
+            )
+        else:
+            block.append(
+                Conv2dNormActivation(
+                    in_channels,
+                    out_channels,
+                    kernel_size=kernel,
+                    stride=stride,
+                    padding=padding,
+                    groups=1,
+                    norm_layer=partial(nn.BatchNorm2d, eps=0.001),
+                    activation_layer=partial(nn.SiLU, inplace=True),
+                    bias=False,
+                )
+            )
+
+        self.block = nn.Sequential(*block)
+        self.stochastic_depth = StochasticDepth(stochastic_depth_prob, "row")
+
+    def forward(self, x: Tensor) -> Tensor:
+        identity = x
+
+        out = self.block(x)
+        if self.use_res_connect:
+            out = self.stochastic_depth(out)
+            out = torch.add(out, identity)
+
+        return out
+
+
+class EfficientNetV2(nn.Module):
 
     def __init__(
             self,
-            arch_cfg: [Union[int, int, int, int, int, int]],
-            width_mult: float = 1.0,
-            depth_mult: float = 1.0,
+            arch_cfg: [Union[str, int, int, int, int, int, int]],
             stochastic_depth_prob: float = 0.2,
             dropout: float = 0.2,
             num_classes: int = 1000,
     ) -> None:
-        super(EfficientNetV1, self).__init__()
+        super(EfficientNetV2, self).__init__()
 
         features: List[nn.Module] = [Conv2dNormActivation(
             3,
-            make_divisible(arch_cfg[0][3] * width_mult, 8, None),
+            arch_cfg[0][4],
             kernel_size=3,
             stride=2,
             padding=1,
             groups=1,
-            norm_layer=partial(nn.BatchNorm2d, eps=0.001, momentum=0.01),
+            norm_layer=partial(nn.BatchNorm2d, eps=0.001),
             activation_layer=partial(nn.SiLU, inplace=True),
             bias=False,
         )]
 
-        total_stage_blocks = sum(int(math.ceil(cfg[5] * depth_mult)) for cfg in arch_cfg)
+        total_stage_blocks = sum(int(math.ceil(cfg[6])) for cfg in arch_cfg)
         stage_block_id = 0
         for cfg in arch_cfg:
             stage: List[nn.Module] = []
-            for _ in range(int(math.ceil(cfg[5] * depth_mult))):
+            for _ in range(int(math.ceil(cfg[6]))):
+                # Chose feature block
+                if cfg[0] == "MBConv":
+                    block = MBConv
+                else:
+                    block = FusedMBConv
                 # overwrite info if not the first conv in the stage
                 if stage:
-                    cfg[3] = cfg[4]
-                    cfg[2] = 1
+                    cfg[4] = cfg[5]
+                    cfg[3] = 1
 
                 # adjust stochastic depth probability based on the depth of the stage block
                 sd_prob = stochastic_depth_prob * float(stage_block_id) / total_stage_blocks
 
                 stage.append(
-                    MBConv(
-                        cfg[3],
+                    block(
                         cfg[4],
-                        cfg[1],
+                        cfg[5],
                         cfg[2],
-                        cfg[1] // 2,
-                        cfg[0],
-                        width_mult,
+                        cfg[3],
+                        cfg[2] // 2,
+                        cfg[1],
                         sd_prob,
                     )
                 )
@@ -184,8 +278,8 @@ class EfficientNetV1(nn.Module):
             features.append(nn.Sequential(*stage))
 
         # building last several layers
-        last_in_channels = make_divisible(arch_cfg[-1][4] * width_mult, 8, None)
-        last_out_channels = int(4 * last_in_channels)
+        last_in_channels = make_divisible(arch_cfg[-1][5], 8, None)
+        last_out_channels = 1280
         features.append(
             Conv2dNormActivation(
                 last_in_channels,
@@ -194,7 +288,7 @@ class EfficientNetV1(nn.Module):
                 stride=1,
                 padding=0,
                 groups=1,
-                norm_layer=partial(nn.BatchNorm2d, eps=0.001, momentum=0.01),
+                norm_layer=partial(nn.BatchNorm2d, eps=0.001),
                 activation_layer=partial(nn.SiLU, inplace=True),
                 bias=False,
             )
@@ -241,49 +335,19 @@ class EfficientNetV1(nn.Module):
                 nn.init.zeros_(module.bias)
 
 
-def efficientnet_v1_b0(**kwargs: Any) -> EfficientNetV1:
-    model = EfficientNetV1(efficientnet_cfg, 1.0, 1.0, 0.2, 0.2, **kwargs)
+def efficientnet_v2_s(**kwargs: Any) -> EfficientNetV2:
+    model = EfficientNetV2(efficientnet_v2_s_cfg, 0.2, 0.2, **kwargs)
 
     return model
 
 
-def efficientnet_v1_b1(**kwargs: Any) -> EfficientNetV1:
-    model = EfficientNetV1(efficientnet_cfg, 1.0, 1.1, 0.2, 0.2, **kwargs)
+def efficientnet_v2_m(**kwargs: Any) -> EfficientNetV2:
+    model = EfficientNetV2(efficientnet_v2_m_cfg, 0.2, 0.3, **kwargs)
 
     return model
 
 
-def efficientnet_v1_b2(**kwargs: Any) -> EfficientNetV1:
-    model = EfficientNetV1(efficientnet_cfg, 1.1, 1.2, 0.2, 0.3, **kwargs)
-
-    return model
-
-
-def efficientnet_v1_b3(**kwargs: Any) -> EfficientNetV1:
-    model = EfficientNetV1(efficientnet_cfg, 1.2, 1.4, 0.2, 0.3, **kwargs)
-
-    return model
-
-
-def efficientnet_v1_b4(**kwargs: Any) -> EfficientNetV1:
-    model = EfficientNetV1(efficientnet_cfg, 1.4, 1.8, 0.2, 0.4, **kwargs)
-
-    return model
-
-
-def efficientnet_v1_b5(**kwargs: Any) -> EfficientNetV1:
-    model = EfficientNetV1(efficientnet_cfg, 1.6, 2.2, 0.2, 0.4, **kwargs)
-
-    return model
-
-
-def efficientnet_v1_b6(**kwargs: Any) -> EfficientNetV1:
-    model = EfficientNetV1(efficientnet_cfg, 1.8, 2.6, 0.2, 0.5, **kwargs)
-
-    return model
-
-
-def efficientnet_v1_b7(**kwargs: Any) -> EfficientNetV1:
-    model = EfficientNetV1(efficientnet_cfg, 2.0, 3.1, 0.2, 0.5, **kwargs)
+def efficientnet_v2_l(**kwargs: Any) -> EfficientNetV2:
+    model = EfficientNetV2(efficientnet_v2_l_cfg, 0.2, 0.4, **kwargs)
 
     return model
