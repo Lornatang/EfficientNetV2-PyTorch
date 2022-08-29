@@ -3,7 +3,7 @@
 ## Overview
 
 This repository contains an op-for-op PyTorch reimplementation
-of [EfficientNet: Rethinking Model Scaling for Convolutional Neural Networks](https://arxiv.org/pdf/1905.11946v5.pdf).
+of [EfficientNetV2: Smaller Models and Faster Training](https://arxiv.org/pdf/2104.00298v3.pdf).
 
 ## Table of contents
 
@@ -19,7 +19,7 @@ of [EfficientNet: Rethinking Model Scaling for Convolutional Neural Networks](ht
     - [Result](#result)
     - [Contributing](#contributing)
     - [Credit](#credit)
-        - [EfficientNet: Rethinking Model Scaling for Convolutional Neural Networks](#efficientnet-rethinking-model-scaling-for-convolutional-neural-networks)
+        - [EfficientNetV2: Smaller Models and Faster Training](#efficientnetv2-smaller-models-and-faster-training)
 
 ## Download weights
 
@@ -80,20 +80,16 @@ python3 train.py
 
 ## Result
 
-Source of original paper results: [https://arxiv.org/pdf/1905.11946v5.pdf](https://arxiv.org/pdf/1905.11946v5.pdf))
+Source of original paper results: [https://arxiv.org/pdf/2104.00298v3.pdf](https://arxiv.org/pdf/2104.00298v3.pdf))
 
 In the following table, the top-x error value in `()` indicates the result of the project, and `-` indicates no test.
 
-|       Model        |   Dataset   | Top-1 error (val) | Top-5 error (val) |
-|:------------------:|:-----------:|:-----------------:|:-----------------:|
-| efficientnet_v2_s | ImageNet_1K | 22.9%(**26.1%**)  |  6.7%(**8.4%**)   |
-| efficientnet_v1_b1 | ImageNet_1K | 20.9%(**21.3%**)  |  5.6%(**5.7%**)   |
-| efficientnet_v1_b2 | ImageNet_1K | 19.9%(**22.1%**)  |  5.1%(**6.4%**)   |
-| efficientnet_v1_b3 | ImageNet_1K | 18.4%(**18.9%**)  |  4.3%(**4.3%**)   |
-| efficientnet_v1_b4 | ImageNet_1K | 17.1%(**16.9%**)  |  3.6%(**3.5%**)   |
-| efficientnet_v1_b5 | ImageNet_1K | 16.4%(**16.4%**)  |  3.3%(**3.3%**)   |
-| efficientnet_v1_b6 | ImageNet_1K | 16.0%(**16.0%**)  |  3.2%(**3.2%**)   |
-| efficientnet_v1_b7 | ImageNet_1K | 15.7%(**15.7%**)  |  3.0%(**3.1%**)   |
+|       Model       |   Dataset   | Top-1 error (val) | Top-5 error (val) |
+|:-----------------:|:-----------:|:-----------------:|:-----------------:|
+| efficientnet_v2_s | ImageNet_1K | 16.1%(**15.7%**)  |    -(**3.1%**)    |
+| efficientnet_v2_m | ImageNet_1K | 14.9%(**14.9%**)  |    -(**2.8%**)    |
+| efficientnet_v2_l | ImageNet_1K | 114.2%(**14.2%**) |    -(**2.2%**)    |
+
 
 ```bash
 # Download `EfficientNetV2_S-ImageNet_1K-a93bc34c.pth.tar` weights to `./results/pretrained_models`
@@ -110,11 +106,11 @@ Output:
 ```text
 Build `efficientnet_v2_s` model successfully.
 Load `efficientnet_v2_s` model weights `/EfficientNetV2-PyTorch/results/pretrained_models/EfficientNetV2_S-ImageNet_1K-a93bc34c.pth.tar` successfully.
-tench, Tinca tinca                                                          (95.10%)
-barracouta, snoek                                                           (2.01%)
-reel                                                                        (0.10%)
-gar, garfish, garpike, billfish, Lepisosteus osseus                         (0.06%)
-armadillo                                                                   (0.04%)
+tench, Tinca tinca                                                          (79.91%)
+barracouta, snoek                                                           (0.65%)
+gar, garfish, garpike, billfish, Lepisosteus osseus                         (0.14%)
+sturgeon                                                                    (0.14%)
+coho, cohoe, coho salmon, blue jack, silver salmon, Oncorhynchus kisutch    (0.11%)
 ```
 
 ## Contributing
@@ -126,34 +122,34 @@ I look forward to seeing what the community does with these models!
 
 ### Credit
 
-#### EfficientNet: Rethinking Model Scaling for Convolutional Neural Networks
+#### EfficientNetV2: Smaller Models and Faster Training
 
 *Mingxing Tan, Quoc V. Le*
 
 ##### Abstract
 
-Convolutional Neural Networks (ConvNets) are commonly developed at a fixed resource budget, and then scaled up for
-better accuracy if more resources are available. In this paper, we systematically study model scaling and identify that
-carefully balancing network depth, width, and resolution can lead to better performance. Based on this observation, we
-propose a new scaling method that uniformly scales all dimensions of depth/width/resolution using a simple yet highly
-effective compound coefficient. We demonstrate the effectiveness of this method on scaling up MobileNets and ResNet.
-To go even further, we use neural architecture search to design a new baseline network and scale it up to obtain a
-family of models, called EfficientNets, which achieve much better accuracy and efficiency than previous ConvNets. In
-particular, our EfficientNet-B7 achieves state-of-the-art 84.3% top-1 accuracy on ImageNet, while being 8.4x smaller and
-6.1x faster on inference than the best existing ConvNet. Our EfficientNets also transfer well and achieve
-state-of-the-art accuracy on CIFAR-100 (91.7%), Flowers (98.8%), and 3 other transfer learning datasets, with an order
-of magnitude fewer parameters. Source code is
-at [this https URL](https//github.com/tensorflow/tpu/tree/master/models/official/efficientnet.)
+This paper introduces EfficientNetV2, a new family of convolutional networks that have faster training speed and better
+parameter efficiency than previous models. To develop this family of models, we use a combination of training-aware
+neural architecture search and scaling, to jointly optimize training speed and parameter efficiency. The models were
+searched from the search space enriched with new ops such as Fused-MBConv. Our experiments show that EfficientNetV2
+models train much faster than state-of-the-art models while being up to 6.8x smaller.
+Our training can be further sped up by progressively increasing the image size during training, but it often causes a
+drop in accuracy. To compensate for this accuracy drop, we propose to adaptively adjust regularization (e.g., dropout
+and data augmentation) as well, such that we can achieve both fast training and good accuracy.
+With progressive learning, our EfficientNetV2 significantly outperforms previous models on ImageNet and
+CIFAR/Cars/Flowers datasets. By pretraining on the same ImageNet21k, our EfficientNetV2 achieves 87.3% top-1 accuracy on
+ImageNet ILSVRC2012, outperforming the recent ViT by 2.0% accuracy while training 5x-11x faster using the same computing
+resources. Code will be available at [this https URL](https://github.com/google/automl/tree/master/efficientnetv2).
 
-[[Paper]](https://arxiv.org/pdf/1905.11946v5.pdf)
+[[Paper]](https://arxiv.org/pdf/2104.00298v3.pdf)
 
 ```bibtex
-@inproceedings{tan2019efficientnet,
-  title={Efficientnet: Rethinking model scaling for convolutional neural networks},
+@inproceedings{tan2021efficientnetv2,
+  title={Efficientnetv2: Smaller models and faster training},
   author={Tan, Mingxing and Le, Quoc},
-  booktitle={International conference on machine learning},
-  pages={6105--6114},
-  year={2019},
+  booktitle={International Conference on Machine Learning},
+  pages={10096--10106},
+  year={2021},
   organization={PMLR}
 }
 ```
