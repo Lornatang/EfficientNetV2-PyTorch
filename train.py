@@ -42,13 +42,13 @@ def main():
     train_prefetcher, valid_prefetcher = load_dataset()
     print(f"Load `{config.model_arch_name}` datasets successfully.")
 
-    efficientnet_v1_model, ema_efficientnet_v1_model = build_model()
+    efficientnet_v2_model, ema_efficientnet_v2_model = build_model()
     print(f"Build `{config.model_arch_name}` model successfully.")
 
     pixel_criterion = define_loss()
     print("Define all loss functions successfully.")
 
-    optimizer = define_optimizer(efficientnet_v1_model)
+    optimizer = define_optimizer(efficientnet_v2_model)
     print("Define all optimizer functions successfully.")
 
     scheduler = define_scheduler(optimizer)
@@ -56,10 +56,10 @@ def main():
 
     print("Check whether to load pretrained model weights...")
     if config.pretrained_model_weights_path:
-        efficientnet_v1_model, ema_efficientnet_v1_model, start_epoch, best_acc1, optimizer, scheduler = load_state_dict(
-            efficientnet_v1_model,
+        efficientnet_v2_model, ema_efficientnet_v2_model, start_epoch, best_acc1, optimizer, scheduler = load_state_dict(
+            efficientnet_v2_model,
             config.pretrained_model_weights_path,
-            ema_efficientnet_v1_model,
+            ema_efficientnet_v2_model,
             start_epoch,
             best_acc1,
             optimizer,
@@ -70,10 +70,10 @@ def main():
 
     print("Check whether the pretrained model is restored...")
     if config.resume:
-        efficientnet_v1_model, ema_efficientnet_v1_model, start_epoch, best_acc1, optimizer, scheduler = load_state_dict(
-            efficientnet_v1_model,
+        efficientnet_v2_model, ema_efficientnet_v2_model, start_epoch, best_acc1, optimizer, scheduler = load_state_dict(
+            efficientnet_v2_model,
             config.pretrained_model_weights_path,
-            ema_efficientnet_v1_model,
+            ema_efficientnet_v2_model,
             start_epoch,
             best_acc1,
             optimizer,
@@ -96,8 +96,8 @@ def main():
     scaler = amp.GradScaler()
 
     for epoch in range(start_epoch, config.epochs):
-        train(efficientnet_v1_model, ema_efficientnet_v1_model, train_prefetcher, pixel_criterion, optimizer, epoch, scaler, writer)
-        acc1 = validate(ema_efficientnet_v1_model, valid_prefetcher, epoch, writer, "Valid")
+        train(efficientnet_v2_model, ema_efficientnet_v2_model, train_prefetcher, pixel_criterion, optimizer, epoch, scaler, writer)
+        acc1 = validate(ema_efficientnet_v2_model, valid_prefetcher, epoch, writer, "Valid")
         print("\n")
 
         # Update LR
@@ -109,8 +109,8 @@ def main():
         best_acc1 = max(acc1, best_acc1)
         save_checkpoint({"epoch": epoch + 1,
                          "best_acc1": best_acc1,
-                         "state_dict": efficientnet_v1_model.state_dict(),
-                         "ema_state_dict": ema_efficientnet_v1_model.state_dict(),
+                         "state_dict": efficientnet_v2_model.state_dict(),
+                         "ema_state_dict": ema_efficientnet_v2_model.state_dict(),
                          "optimizer": optimizer.state_dict(),
                          "scheduler": scheduler.state_dict()},
                         f"epoch_{epoch + 1}.pth.tar",
@@ -159,13 +159,13 @@ def load_dataset() -> [CUDAPrefetcher, CUDAPrefetcher]:
 
 
 def build_model() -> [nn.Module, nn.Module]:
-    efficientnet_v1_model = model.__dict__[config.model_arch_name](num_classes=config.model_num_classes)
-    efficientnet_v1_model = efficientnet_v1_model.to(device=config.device, memory_format=torch.channels_last)
+    efficientnet_v2_model = model.__dict__[config.model_arch_name](num_classes=config.model_num_classes)
+    efficientnet_v2_model = efficientnet_v2_model.to(device=config.device, memory_format=torch.channels_last)
 
     ema_avg = lambda averaged_model_parameter, model_parameter, num_averaged: (1 - config.model_ema_decay) * averaged_model_parameter + config.model_ema_decay * model_parameter
-    ema_efficientnet_v1_model = AveragedModel(efficientnet_v1_model, avg_fn=ema_avg)
+    ema_efficientnet_v2_model = AveragedModel(efficientnet_v2_model, avg_fn=ema_avg)
 
-    return efficientnet_v1_model, ema_efficientnet_v1_model
+    return efficientnet_v2_model, ema_efficientnet_v2_model
 
 
 def define_loss() -> nn.CrossEntropyLoss:

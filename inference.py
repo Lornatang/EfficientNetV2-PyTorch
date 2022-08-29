@@ -46,10 +46,10 @@ def choice_device(device_type: str) -> torch.device:
 
 
 def build_model(model_arch_name: str, model_num_classes: int, device: torch.device) -> [nn.Module, nn.Module]:
-    efficientnet_v1_model = model.__dict__[model_arch_name](num_classes=model_num_classes)
-    efficientnet_v1_model = efficientnet_v1_model.to(device=device, memory_format=torch.channels_last)
+    efficientnet_v2_model = model.__dict__[model_arch_name](num_classes=model_num_classes)
+    efficientnet_v2_model = efficientnet_v2_model.to(device=device, memory_format=torch.channels_last)
 
-    return efficientnet_v1_model
+    return efficientnet_v2_model
 
 
 def preprocess_image(image_path: str, image_size: int, device: torch.device) -> torch.Tensor:
@@ -83,21 +83,21 @@ def main():
     device = choice_device(args.device_type)
 
     # Initialize the model
-    efficientnet_v1_model = build_model(args.model_arch_name, args.model_num_classes, device)
+    efficientnet_v2_model = build_model(args.model_arch_name, args.model_num_classes, device)
     print(f"Build `{args.model_arch_name}` model successfully.")
 
     # Load model weights
-    efficientnet_v1_model, _, _, _, _, _ = load_state_dict(efficientnet_v1_model, args.model_weights_path)
+    efficientnet_v2_model, _, _, _, _, _ = load_state_dict(efficientnet_v2_model, args.model_weights_path)
     print(f"Load `{args.model_arch_name}` model weights `{os.path.abspath(args.model_weights_path)}` successfully.")
 
     # Start the verification mode of the model.
-    efficientnet_v1_model.eval()
+    efficientnet_v2_model.eval()
 
     tensor = preprocess_image(args.image_path, args.image_size, device)
 
     # Inference
     with torch.no_grad():
-        output = efficientnet_v1_model(tensor)
+        output = efficientnet_v2_model(tensor)
 
     # Calculate the five categories with the highest classification probability
     prediction_class_index = torch.topk(output, k=5).indices.squeeze(0).tolist()

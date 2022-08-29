@@ -28,10 +28,10 @@ model_names = sorted(
 
 
 def build_model() -> nn.Module:
-    efficientnet_v1_model = model.__dict__[config.model_arch_name](num_classes=config.model_num_classes)
-    efficientnet_v1_model = efficientnet_v1_model.to(device=config.device, memory_format=torch.channels_last)
+    efficientnet_v2_model = model.__dict__[config.model_arch_name](num_classes=config.model_num_classes)
+    efficientnet_v2_model = efficientnet_v2_model.to(device=config.device, memory_format=torch.channels_last)
 
-    return efficientnet_v1_model
+    return efficientnet_v2_model
 
 
 def load_dataset() -> CUDAPrefetcher:
@@ -57,16 +57,16 @@ def load_dataset() -> CUDAPrefetcher:
 
 def main() -> None:
     # Initialize the model
-    efficientnet_v1_model = build_model()
+    efficientnet_v2_model = build_model()
     print(f"Build `{config.model_arch_name}` model successfully.")
 
     # Load model weights
-    efficientnet_v1_model, _, _, _, _, _ = load_state_dict(efficientnet_v1_model, config.model_weights_path)
+    efficientnet_v2_model, _, _, _, _, _ = load_state_dict(efficientnet_v2_model, config.model_weights_path)
     print(f"Load `{config.model_arch_name}` "
           f"model weights `{os.path.abspath(config.model_weights_path)}` successfully.")
 
     # Start the verification mode of the model.
-    efficientnet_v1_model.eval()
+    efficientnet_v2_model.eval()
 
     # Load test dataloader
     test_prefetcher = load_dataset()
@@ -98,7 +98,7 @@ def main() -> None:
             batch_size = images.size(0)
 
             # Inference
-            output = efficientnet_v1_model(images)
+            output = efficientnet_v2_model(images)
 
             # measure accuracy and record loss
             top1, top5 = accuracy(output, target, topk=(1, 5))
